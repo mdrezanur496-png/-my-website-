@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>সুগন্ধি মিষ্টি</title>
+</head>
+<body>
+
+  <header>
+    <h1>🍬 সুগন্ধি মিষ্টি</h1>
+    <p>মিষ্টির স্বাদে থাকুক ভালোবাসার ছোঁয়া</p>
+  </header>
+
+  <nav>
+    <a href="#home">হোম</a>
+    <a href="#products">মিষ্টি</a>
+    <a href="#cart">কার্ট</a>
+    <a href="#admin">দাম ও ছবি পরিবর্তন</a>
+  </nav>
+
+  <section class="hero" id="home">
+    <h2>ঘরে বসেই অর্ডার করুন প্রিয় মিষ্টি</h2>
+    <p>সুস্বাদু মিষ্টি পৌঁছে যাবে আপনার ঠিকানায়!</p>
+    <a class="hero-btn" href="#products">মিষ্টি দেখুন</a>
+  </section>
+
+  <main class="container">
+    <h2 class="section-title" id="products">আমাদের মিষ্টি</h2>
+    <div class="products" id="productList"></div>
+
+    <section class="panel" id="admin">
+      <h2>🛠️ মিষ্টির নাম, দাম ও ছবি পরিবর্তন</h2>
+
+      <label for="adminProduct">মিষ্টি নির্বাচন</label>
+      <select id="adminProduct"></select>
+
+      <label for="editName">মিষ্টির নাম</label>
+      <input id="editName" type="text">
+
+      <label for="editPrice">দাম (টাকা)</label>
+      <input id="editPrice" type="number" min="0" step="1">
+
+      <label for="editImage">ছবির URL (ঐচ্ছিক)</label>
+      <input id="editImage" type="url" placeholder="https://example.com/sweet.jpg">
+
+      <label for="uploadImage">মোবাইল থেকে ছবি যোগ করো</label>
+      <input id="uploadImage" type="file" accept="image/*">
+
+      <button id="saveProduct" class="btn">পরিবর্তন সংরক্ষণ</button>
+      <p class="small">
+        এই ডেমোতে পরিবর্তন একই ব্রাউজারে সংরক্ষিত হবে।
+        এটি পাসওয়ার্ড-সুরক্ষিত অ্যাডমিন প্যানেল নয়।
+      </p>
+    </section>
+
+    <section class="panel" id="cart">
+      <h2>🛒 তোমার শপিং কার্ট</h2>
+      <div id="cartItems">এখনও কোনো মিষ্টি যোগ করা হয়নি।</div>
+
+      <div class="total-row">
+        <span>মিষ্টির মোট দাম</span>
+        <strong id="subtotal">৳০</strong>
+      </div>
+
+      <div class="total-row">
+        <span>কুরিয়ার চার্জ</span>
+        <strong id="delivery">৳০</strong>
+      </div>
+
+      <div class="total-row grand-total">
+        <span>সর্বমোট</span>
+        <strong id="grandTotal">৳০</strong>
+      </div>
+    </section>
+
+    <section class="panel" id="checkout">
+      <h2>📦 অর্ডার ফর্ম</h2>
+
+      <form id="orderForm">
+        <label for="customerName">তোমার নাম *</label>
+        <input id="customerName" required placeholder="সম্পূর্ণ নাম">
+
+        <label for="phone">মোবাইল নম্বর *</label>
+        <input id="phone" type="tel" required
+          pattern="01[3-9][0-9]{8}" placeholder="01XXXXXXXXX">
+
+        <label for="address">সম্পূর্ণ ঠিকানা *</label>
+        <textarea id="address" rows="3" required
+          placeholder="গ্রাম, উপজেলা, জেলা"></textarea>
+
+        <label for="payment">পেমেন্ট পদ্ধতি</label>
+        <select id="payment">
+          <option value="bkash">বিকাশ</option>
+          <option value="cod">ক্যাশ অন ডেলিভারি</option>
+        </select>
+
+        <div id="bkashInfo" class="notice">
+          <strong>বিকাশ পেমেন্ট</strong>
+          <p>দোকানের বিকাশ নম্বর: <span id="bkashNumber"></span></p>
+          <label for="trxId">Transaction ID</label>
+          <input id="trxId" placeholder="পেমেন্টের TrxID">
+          <p class="small">
+            এটি ম্যানুয়াল পেমেন্টের নমুনা।
+            এখানে এখনো স্বয়ংক্রিয় পেমেন্ট চালু হয়নি।
+          </p>
+        </div>
+
+        <button class="btn" type="submit">WhatsApp-এ অর্ডার পাঠাও</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <h3>🍬 সুগন্ধি মিষ্টি</h3>
+    <p>মিষ্টি হোক প্রতিটি আনন্দের সঙ্গী</p>
+    <p>ফোন: দোকানের নম্বর এখানে বসাও</p>
+  </footer>
+
+</body>
+</html>
