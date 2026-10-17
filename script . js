@@ -1,0 +1,335 @@
+
+"use strict";
+
+// ===== দোকানের তথ্য এখানে পরিবর্তন করো =====
+const WHATSAPP_NUMBER = "8801XXXXXXXXX";
+const BKASH_NUMBER = "01XXXXXXXXX";
+const COURIER_CHARGE = 150;
+
+// নমুনা দাম; নিজের প্রকৃত দাম বসাবে।
+const defaultProducts = [
+  { id: 1, name: "রসকদম", price: 40, image: "" },
+  { id: 2, name: "পাতা প্যাড়া", price: 35, image: "" },
+  { id: 3, name: "পোস্তকদম", price: 40, image: "" },
+  { id: 4, name: "লবঙ্গ লতিকা", price: 30, image: "" },
+  { id: 5, name: "মতিচুর লাড্ডু", price: 25, image: "" },
+  { id: 6, name: "আদি চমচম", price: 45, image: "" }
+];
+
+function loadProducts() {
+  try {
+    const saved = localStorage.getItem("sugondhi_products");
+    if (!saved) return defaultProducts.map(p => ({ ...p }));
+
+    const data = JSON.parse(saved);
+
+    if (
+      !Array.isArray(data) ||
+      data.length !== defaultProducts.length ||
+      !data.every(p =>
+        Number.isInteger(p.id) &&
+        typeof p.name === "string" &&
+        Number.isFinite(p.price) &&
+        p.price >= 0 &&
+        typeof p.image === "string"
+      )
+    ) {
+      return defaultProducts.map(p => ({ ...p }));
+    }
+
+    return data;
+  } catch {
+    return defaultProducts.map(p => ({ ...p }));
+  }
+}
+
+let products = loadProducts();
+let cart = {};
+
+const $ = id => document.getElementById(id);
+const money = n => "৳" + Number(n).toLocaleString("bn-BD");
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+function imageFor(product) {
+  if (product.image) return product.image;
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg"
+      width="400" height="250">
+      <rect width="100%" height="100%" fill="#f4dfc9"/>
+      <text x="50%" y="45%" text-anchor="middle"
+        font-size="55">🍬</text>
+      <text x="50%" y="75%" text-anchor="middle"
+        font-size="22" fill="#76233a">${escapeHTML(product.name)}</text>
+    </svg>`;
+
+  return "data:image/svg+xml;charset=UTF-8," +
+    encodeURIComponent(svg);
+}
+
+function renderProducts() {
+  $("productList").innerHTML = products.map(p => `
+    <article class="card">
+      <img class="sweet-image"
+        src="${escapeHTML(imageFor(p))}"
+        alt="${escapeHTML(p.name)}"
+        onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22250%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23f4dfc9%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 font-size=%2220%22%3Eছবি নেই%3C/text%3E%3C/svg%3E'">
+      <div class="card-content">
+        <h3>${escapeHTML(p.name)}</h3>
+        <div class="price">${money(p.price)}</div>
+        <button class="btn" onclick="addToCart(${p.id})">
+          কার্টে যোগ করো
+        </button>
+        <button class="edit-btn" onclick="selectProduct(${p.id})">
+          দাম/ছবি পরিবর্তন
+        </button>
+      </div>
+    </article>
+  `).join("");
+}
+
+function renderAdminOptions() {
+  $("adminProduct").innerHTML = products.map(p => `
+    <option value="${p.id}">${escapeHTML(p.name)}</option>
+  `).join("");
+
+  selectProduct(products[0].id);
+}
+
+function selectProduct(id) {
+  const p = products.find(item => item.id === Number(id));
+  if (!p) return;
+
+  $("adminProduct").value = p.id;
+  $("editName").value = p.name;
+  $("editPrice").value = p.price;
+  $("editImage").value =
+    p.image.startsWith("data:") ? "" : p.image;
+  $("uploadImage").value = "";
+
+  $("admin").scrollIntoView({ behavior: "smooth" });
+}
+
+$("adminProduct").addEventListener("change", e => {
+  selectProduct(e.target.value);
+});
+
+$("saveProduct").addEventListener("click", saveProduct);
+
+function saveProduct() {
+  const id = Number($("adminProduct").value);
+  const p = products.find(item => item.id === id);
+  const name = $("editName").value.trim();
+  const price = Number($("editPrice").value);
+  const imageURL = $("editImage").value.trim();
+  const file = $("uploadImage").files[0];
+
+  if (!p || !name || !Number.isFinite(price) || price < 0) {
+    alert("সঠিক নাম ও দাম লিখুন।");
+    return;
+  }
+
+  if (
+    imageURL &&
+    !/^https?:\/\/\S+$/i.test(imageURL)
+  ) {
+    alert("ছবির সঠিক https:// অথবা http:// URL দিন।");
+    return;
+  }
+
+  if (file && !file.type.startsWith("image/")) {
+    alert("ছবির ফাইল নির্বাচন করুন।");
+    return;
+  }
+
+  if (file && file.size > 700000) {
+    alert("ছবিটি ৭০০ KB-এর চেয়ে ছোট করুন।");
+    return;
+  }
+
+  p.name = name;
+  p.price = price;
+  p.image = imageURL;
+
+  function finishSave() {
+    try {
+      localStorage.setItem(
+        "sugondhi_products",
+        JSON.stringify(products)
+      );
+
+      renderProducts();
+      renderAdminOptions();
+      renderCart();
+
+      alert("পণ্যের তথ্য সংরক্ষণ হয়েছে!");
+    } catch {
+      alert("ছবি বা তথ্য সংরক্ষণ করা যায়নি। ছোট ছবি ব্যবহার করুন।");
+    }
+  }
+
+  if (file) {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      p.image = reader.result;
+      finishSave();
+    };
+
+    reader.onerror = () => {
+      alert("ছবি পড়া যায়নি। আবার চেষ্টা করুন।");
+    };
+
+    reader.readAsDataURL(file);
+  } else {
+    finishSave();
+  }
+}
+
+function addToCart(id) {
+  cart[id] = (cart[id] || 0) + 1;
+  renderCart();
+  $("cart").scrollIntoView({ behavior: "smooth" });
+}
+
+function changeQty(id, amount) {
+  cart[id] = (cart[id] || 0) + amount;
+
+  if (cart[id] <= 0) {
+    delete cart[id];
+  }
+
+  renderCart();
+}
+
+function getCartEntries() {
+  return Object.entries(cart).filter(([id, qty]) =>
+    products.some(p => p.id === Number(id)) && qty > 0
+  );
+}
+
+function getSubtotal() {
+  return getCartEntries().reduce((sum, [id, qty]) => {
+    const p = products.find(item => item.id === Number(id));
+    return sum + p.price * qty;
+  }, 0);
+}
+
+function renderCart() {
+  const entries = getCartEntries();
+
+  if (!entries.length) {
+    $("cartItems").textContent =
+      "এখনও কোনো মিষ্টি যোগ করা হয়নি।";
+  } else {
+    $("cartItems").innerHTML = entries.map(([id, qty]) => {
+      const p = products.find(item => item.id === Number(id));
+
+      return `
+        <div class="cart-row">
+          <div>
+            <strong>${escapeHTML(p.name)}</strong><br>
+            ${money(p.price)} × ${qty} = ${money(p.price * qty)}
+          </div>
+          <div class="qty">
+            <button type="button"
+              onclick="changeQty(${id},-1)">−</button>
+            <strong>${qty}</strong>
+            <button type="button"
+              onclick="changeQty(${id},1)">+</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  const subtotal = getSubtotal();
+  const delivery = subtotal > 0 ? COURIER_CHARGE : 0;
+
+  $("subtotal").textContent = money(subtotal);
+  $("delivery").textContent = money(delivery);
+  $("grandTotal").textContent = money(subtotal + delivery);
+  $("bkashNumber").textContent = BKASH_NUMBER;
+}
+
+$("payment").addEventListener("change", () => {
+  const isBkash = $("payment").value === "bkash";
+
+  $("bkashInfo").classList.toggle("hidden", !isBkash);
+  $("trxId").required = false;
+});
+
+$("orderForm").addEventListener("submit", event => {
+  event.preventDefault();
+
+  const entries = getCartEntries();
+
+  if (!entries.length) {
+    alert("প্রথমে কার্টে মিষ্টি যোগ করুন।");
+    return;
+  }
+
+  if (!/^8801[3-9]\d{8}$/.test(WHATSAPP_NUMBER)) {
+    alert("JS কোডে WHATSAPP_NUMBER-এর জায়গায় সঠিক নম্বর বসাও।");
+    return;
+  }
+
+  const name = $("customerName").value.trim();
+  const phone = $("phone").value.trim();
+  const address = $("address").value.trim();
+  const payment = $("payment").value;
+  const trxId = $("trxId").value.trim();
+
+  if (!name || !phone || !address) {
+    alert("নাম, ফোন ও ঠিকানা পূরণ করুন।");
+    return;
+  }
+
+  const subtotal = getSubtotal();
+  const total = subtotal + COURIER_CHARGE;
+
+  const itemLines = entries.map(([id, qty]) => {
+    const p = products.find(item => item.id === Number(id));
+    return `• ${p.name} × ${qty} = ${p.price * qty} টাকা`;
+  }).join("\n");
+
+  const message = `
+🍬 সুগন্ধি মিষ্টি - নতুন অর্ডার
+
+নাম: ${name}
+ফোন: ${phone}
+ঠিকানা: ${address}
+
+অর্ডার:
+${itemLines}
+
+মিষ্টির দাম: ${subtotal} টাকা
+কুরিয়ার চার্জ: ${COURIER_CHARGE} টাকা
+মোট বিল: ${total} টাকা
+
+পেমেন্ট: ${payment === "bkash" ? "বিকাশ" : "ক্যাশ অন ডেলিভারি"}
+Transaction ID: ${trxId || "দেওয়া হয়নি"}
+
+দয়া করে অর্ডারটি নিশ্চিত করুন।
+`.trim();
+
+  const url =
+    "https://wa.me/" + WHATSAPP_NUMBER +
+    "?text=" + encodeURIComponent(message);
+
+  window.open(url, "_blank");
+});
+
+// ওয়েবসাইট শুরু
+renderProducts();
+renderAdminOptions();
+renderCart();
